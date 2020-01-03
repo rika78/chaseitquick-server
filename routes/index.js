@@ -28,7 +28,8 @@ router.get('/qrcodes/alle', async function (req, res, next) {
 router.post('/qrcodes/gefunden', async function (req, res, next) {
   let user = await getUsers()
   let cuser = user.filter(el => el.username == req.body.username);
-
+  console.log(cuser[0].uid);
+  console.log(req.body.qid)
   let p = {
     uid: cuser[0].uid,
     qid: req.body.qid
@@ -37,12 +38,11 @@ router.post('/qrcodes/gefunden', async function (req, res, next) {
 });
 
 router.post('/qrcodes/found', async function (req, res, next) {
-  let user = await getUsers()
+  let user = await getUsers();
   let cuser = user.filter(el => el.username == req.body.username);
-
-  //Log nur von dem user
   res.send(await getLog(cuser[0].uid));
 });
+
 
 //Funktioniert
 router.post('/registrieren', async function (req, res, next) {
