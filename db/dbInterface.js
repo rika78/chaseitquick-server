@@ -65,7 +65,7 @@ const getTime = async (uid) => {
     const client = await pool.connect();
 
     try {
-        const res = await client.query("select to_char(uhzreit, 'HH24:MI') from userfound where uid =$1", [uid]);
+        const res = await client.query("Select (Select time from userfound where uid=$1 and qid =2)-(select time from userfound where uid=$1 and qid=1) as timediff from userfound limit 1;", [uid]);
         return res.rows
     } catch (error) {
 
