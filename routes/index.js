@@ -5,7 +5,8 @@ const {
   addUser,
   getQrcodes,
   addLog,
-  getLog
+  getLog,
+  getTime
 } = require('../db/dbInterface');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -41,6 +42,12 @@ router.post('/qrcodes/found', async function (req, res, next) {
   let user = await getUsers();
   let cuser = user.filter(el => el.username == req.body.username);
   res.send(await getLog(cuser[0].uid));
+});
+
+router.post('/qrcodes/found/time', async function (req, res, next) {
+  let user = await getUsers();
+  let cuser = user.filter(el => el.username == req.body.username);
+  res.send(await getTime(cuser[0].uid));
 });
 
 
@@ -84,7 +91,7 @@ router.post('/registrieren', async function (req, res, next) {
 });
 
 router.post('/anmelden', async function (req, res, next) {
-
+  console.log('hi');
   const allUsers = await getUsers();
   const user = allUsers.filter(el => el.username == req.body.username);
 

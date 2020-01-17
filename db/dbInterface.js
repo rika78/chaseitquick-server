@@ -43,7 +43,7 @@ const addLog = async (p) => {
 
     try {
         await client.query("INSERT INTO userfound values ($1,$2,now())", [p.uid, p.qid]);
-        const res = await client.query("SELECT * FROM userfound");
+        const res = await client.query("SELECT * FROM userfound where uid=$1", [uid]);
         return res.rows
     } catch (error) {
 
@@ -61,11 +61,23 @@ const getLog = async (uid) => {
     }
 }
 
+const getTime = async (uid) => {
+    const client = await pool.connect();
+
+    try {
+        const res = await client.query("select to_char(uhzreit, 'HH24:MI') from userfound where uid =$1", [uid]);
+        return res.rows
+    } catch (error) {
+
+    }
+}
+
 
 module.exports = {
     getUsers,
     addUser,
     getQrcodes,
     addLog,
-    getLog
+    getLog,
+    getTime,
 }
