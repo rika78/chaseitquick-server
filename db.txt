@@ -1,0 +1,14 @@
+Create database cq_db;
+
+Create table users(uid serial primary key not null, username varchar(30) not null, email varchar(30) not null, password varchar not null);
+
+Create table qrcodes(qid serial primary key not null, qrcontent varchar not null);
+
+Insert into qrcodes values(1,'QR Code Nummer 1');
+Insert into qrcodes values(2,'QR Code Nummer 2');
+Insert into qrcodes values(3,'QR Code Nummer 3');
+Insert into qrcodes values(4,'QR Code Nummer 4');
+Insert into qrcodes values(5,'QR Code Nummer 5');
+Insert into qrcodes values(6,'QR Code Nummer 6');
+
+Create table userfound(uid int references users(uid), qid int references qrcodes(qid), time timestamp default now() not null, primary key(uid,qid));

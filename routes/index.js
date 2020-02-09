@@ -18,36 +18,33 @@ router.get('/', function (req, res, next) {
   });
 });
 
-router.get('/alle', async function (req, res, next) {
+// Gibt dir alle Users aus
+router.get('/users/alle', async function (req, res, next) {
   res.send(await getUsers());
 });
 
+//Gibt dir alle QRCodes raus
 router.get('/qrcodes/alle', async function (req, res, next) {
   res.send(await getQrcodes());
 });
 
-router.post('/qrcodes/gefunden', async function (req, res, next) {
-  let user = await getUsers()
-  let cuser = user.filter(el => el.username == req.body.username);
-  console.log(cuser[0].uid);
+//Fügt gefundene Qr Codes, am besten mit id
+router.post('/qrcodes/gefunden/:id', async function (req, res, next) {
+ 
   console.log(req.body.qid)
   let p = {
-    uid: cuser[0].uid,
+    uid: req.body.uid,
     qid: req.body.qid
   }
   res.send(await addLog(p));
 });
 
-router.post('/qrcodes/found', async function (req, res, next) {
-  let user = await getUsers();
-  let cuser = user.filter(el => el.username == req.body.username);
-  res.send(await getLog(cuser[0].uid));
+router.get('/qrcodes/found/:id', async function (req, res, next) {
+  res.send(await getLog(req.params.id));
 });
 
-router.post('/qrcodes/found/time', async function (req, res, next) {
-  let user = await getUsers();
-  let cuser = user.filter(el => el.username == req.body.username);
-  res.send(await getTime(cuser[0].uid));
+router.get('/qrcodes/found/time/:id', async function (req, res, next) {
+  res.send(await getTime(req.params.id));
 });
 
 
@@ -72,8 +69,8 @@ router.post('/registrieren', async function (req, res, next) {
 
         //User wird hinzugefügt
         addUser(userData).then(res.json({
-            status: userData.email + ' Registered!'
-          }))
+          status: userData.email + ' Registered!'
+        }))
           .catch(err => {
             res.send('error: ' + err)
           })
@@ -128,7 +125,6 @@ router.get('/profil', async function (req, res, next) {
   const allUsers = await getUsers();
   let token = req.headers.token;
 
-
   jwt.verify(token, 'secretkey', (err, decoded) => {
     if (err) return res.status(401).json({
       title: 'unautherized',
@@ -139,6 +135,7 @@ router.get('/profil', async function (req, res, next) {
       return res.status(200).json({
         title: 'user',
         user: {
+          uid: vUser[0].uid,
           username: vUser[0].username,
           email: vUser[0].email,
         }

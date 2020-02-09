@@ -6,7 +6,7 @@ const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'cq_db',
-  password: 'T1csl786!', // od postgres || Lcgnrse78
+  password: 'Lcgnrse78!', // od postgres || Lcgnrse78
   port: 5432,
 });
 
