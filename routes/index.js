@@ -1,54 +1,91 @@
 var express = require('express');
 var router = express.Router();
-const {
-  getUsers,
-  addUser,
-  getQrcodes,
-  addLog,
-  getLog,
-  getTime
-} = require('../db/dbInterface');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const { getQrcodes, getUsers, getSPM, createSPSS, gefQr, getSPSS, getLog, endSPSS, getTime, currSPSS, addUser } = require("../db/dbInterface");
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
-  res.render('index', {
-    title: 'Express'
-  });
+  res.render('index', { title: 'Express' });
+});
+router.get('/spielmodus', async function (req, res, next) {
+  res.send(await getSPM());
 });
 
-// Gibt dir alle Users aus
-router.get('/users/alle', async function (req, res, next) {
-  res.send(await getUsers());
-});
-
-//Gibt dir alle QRCodes raus
-router.get('/qrcodes/alle', async function (req, res, next) {
+router.get('/qrcodes', async function (req, res, next) {
   res.send(await getQrcodes());
 });
 
-//Fügt gefundene Qr Codes, am besten mit id
-router.post('/qrcodes/gefunden/:id', async function (req, res, next) {
- 
-  console.log(req.body.qid)
-  let p = {
-    uid: req.body.uid,
-    qid: req.body.qid
+router.post('/qrcodes/gefunden', async function (req, res, next) {
+  console.log(req.body);
+  res.send(await gefQr({ sessid: req.body.sessid, uid: req.body.uid, qid: req.body.qid }));
+});
+
+router.post('/login', async function (req, res, next) {
+  // try {
+  const allUsers = await getUsers();
+  const currUser = allUsers.filter(el => el.username == req.body.username);
+  try {
+    //Wenn ein user mit dem Username gefunden wird:
+    if (allUsers.filter(el => el.username == req.body.username).length != 0) {
+      // Password wird gehasht und verglichen
+      if (bcrypt.compareSync(req.body.password, currUser[0].password)) {
+        //token zur auth wird erstellt
+        const token = jwt.sign({
+          userID: currUser[0].uid
+        }, 'secretkey');
+
+        //Sucessful login:
+        return res.status(200).json({
+          title: 'login success',
+          token: token,
+          user: [currUser[0].uid, currUser[0].username]
+        })
+      } else {
+        return res.status(401).json({
+          title: 'login failed',
+          message: 'daten stimmen nicht'
+        })
+      }
+    } else {
+      //FIX ME: ?
+      return res.status(400).send({ error: "://" })
+    }
+  } catch (error) {
+    return res.status(404).send("Error:" + error);
   }
-  res.send(await addLog(p));
+  // res.send(await getUser());
 });
 
-router.get('/qrcodes/found/:id', async function (req, res, next) {
-  res.send(await getLog(req.params.id));
+router.post('/spielsession', async function (req, res, next) {
+  const spss = { spmid: req.body.spmid, uid: parseInt(req.body.uid) }
+  res.send(await createSPSS(spss));
 });
 
-router.get('/qrcodes/found/time/:id', async function (req, res, next) {
-  res.send(await getTime(req.params.id));
+router.post('/spielsession/ende', async function (req, res, next) {
+  const spss = { sessid: req.body.sessid, uid: parseInt(req.body.uid), punkte: req.body.punkte }
+  res.send(await endSPSS(spss));
 });
 
+router.get('/spielsession/:id/:spmid', async function (req, res, next) {
+  console.log(req.params.id, req.params.spmid)
+  res.send(await getSPSS(req.params.id, req.params.spmid));
+});
 
-//Funktioniert
+router.get('/spielsession/curr/:id/:sessid', async function (req, res, next) {
+  console.log(req.params.id, req.params.sessid)
+  res.send(await currSPSS(req.params.id, req.params.sessid));
+});
+
+router.get('/history/:sessid/:uid', async function (req, res, next) {
+  res.send(await getLog({ uid: parseInt(req.params.uid), sessid: parseInt(req.params.sessid) }));
+});
+
+router.get('/qrcodes/found/time/:id/:sessid', async function (req, res, next) {
+  res.send(await getTime(req.params.id, req.params.sessid));
+});
+
 router.post('/registrieren', async function (req, res, next) {
   const userData = {
     username: req.body.username,
@@ -84,67 +121,6 @@ router.post('/registrieren', async function (req, res, next) {
   } catch (err) {
     res.send('error: ' + err);
   }
-
-});
-
-router.post('/anmelden', async function (req, res, next) {
-  console.log('hi');
-  const allUsers = await getUsers();
-  const user = allUsers.filter(el => el.username == req.body.username);
-
-  try {
-    if (allUsers.map(el => el.username == req.body.username)) {
-      //passwort wird gehasht
-      if (bcrypt.compareSync(req.body.password, user[0].password)) {
-        //token zur auth wird erstellt
-        let token = jwt.sign({
-          userID: user[0].uid
-        }, 'secretkey');
-        return res.status(200).json({
-          title: 'login success',
-          token: token
-        })
-      } else {
-        return res.status(401).json({
-          title: 'login failed',
-          error: 'daten stimmen nicht'
-        })
-      }
-    } else {
-      res.status(400).json({
-        error: 'User does not exist'
-      })
-    }
-  } catch (err) {
-    res.send('error: ' + err);
-  }
-
-});
-
-router.get('/profil', async function (req, res, next) {
-  const allUsers = await getUsers();
-  let token = req.headers.token;
-
-  jwt.verify(token, 'secretkey', (err, decoded) => {
-    if (err) return res.status(401).json({
-      title: 'unautherized',
-    });
-    //if token valid
-    const vUser = allUsers.filter(el => el.uid == decoded.userID);
-    if (vUser[0].uid == decoded.userID) {
-      return res.status(200).json({
-        title: 'user',
-        user: {
-          uid: vUser[0].uid,
-          username: vUser[0].username,
-          email: vUser[0].email,
-        }
-      })
-    } else {
-      console.log(err);
-    }
-
-  });
 
 });
 
